@@ -1,113 +1,103 @@
-
 import React from "react"
 import { motion } from "framer-motion"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { 
-  Scissors, 
+import {
+  Scissors,
+  Sparkles,
+  Heart,
   Paintbrush,
   Wand2,
-  Sparkles,
-  Palette,
-  Heart,
-  Baby,
-  Users
+  User
 } from "lucide-react"
 
 const serviceCategories = {
   haircuts: {
     icon: Scissors,
-    title: "Haircuts",
+    title: "Ladies Hair Services",
     services: [
-      { title: "Ladies dry trim no wash & dry off", price: "$45" },
-      { title: "Ladies wash trim & dry off", price: "$60" },
-      { title: "Ladies wash trim & blow wave", price: "$67" },
-      { title: "Ladies wash restyle & blow wave", price: "$77" },
-      { title: "Fringe trim", price: "$10" },
-      { title: "Men's trim no wash", price: "$25" },
-      { title: "Men's wash trim & style", price: "$30" },
-      { title: "Men's beard cut", price: "$10" }
-    ]
-  },
-  blowWave: {
-    icon: Wand2,
-    title: "Blow Wave & Styling",
-    services: [
-      { title: "Short blow wave", price: "$35" },
-      { title: "Medium blow wave", price: "$45" },
-      { title: "Long blow wave", price: "$55" },
-      { title: "Extra blow wave", price: "$59" },
-      { title: "Extra Curlies GHT", price: "$10" },
-      { title: "Wash & dry off only", price: "$20" }
-    ]
-  },
-  colouring: {
-    icon: Palette,
-    title: "Colouring",
-    services: [
-      { title: "Hairline colour", price: "$45" },
-      { title: "Roots only", price: "$60" },
-      { title: "Root stretch", price: "$85" },
-      { title: "Root + colour gloss through ends/short", price: "$125" },
-      { title: "Root + colour gloss through ends/med", price: "$130" },
-      { title: "Root + colour gloss through ends/long", price: "$135" }
+      {
+        title: "Dry Cut (no wash/blowdry)",
+        price: "From $35",
+        options: ["Short – $35", "Medium – $40", "Long – $45"]
+      },
+      {
+        title: "Cut, Wash & Blow Wave",
+        price: "From $60",
+        options: ["Short – $60", "Medium – $70", "Long – $80"]
+      },
+      { title: "Colour – Roots Touch-Up", price: "From $70" },
+      { title: "Full Colour", price: "From $110" }
     ]
   },
   foils: {
     icon: Sparkles,
-    title: "Foils & Balayage",
+    title: "Foil Highlights",
     services: [
-      { title: "1/4 head foils", price: "$70" },
-      { title: "1/2 head foils", price: "$100" },
-      { title: "3/4 head foils", price: "$115" },
-      { title: "Full head of foils", price: "$140" },
-      { title: "1/4 head balayage", price: "$80" },
-      { title: "1/2 head balayage", price: "$110" },
-      { title: "3/4 head balayage", price: "$135" },
-      { title: "Full head of balayage", price: "$160" },
-      { title: "Ombre with extra colour", price: "$200" }
-    ]
-  },
-  treatments: {
-    icon: Paintbrush,
-    title: "Lightening & Treatments",
-    services: [
-      { title: "Tip cap", price: "$100" },
-      { title: "Scalp lighten", price: "$120" },
-      { title: "Bond protective treatment/one shot", price: "$25" },
-      { title: "Moisturising treatments", price: "$15" },
-      { title: "Keratin treatment", price: "From $120" }
+      {
+        title: "Full Head Foils",
+        price: "From $190",
+        options: ["Short – $190", "Medium – $210", "Long – $240"]
+      },
+      {
+        title: "½ Head Foils",
+        price: "From $160",
+        options: ["Short – $160", "Medium – $175", "Long – $190"]
+      },
+      {
+        title: "¼ Head Foils",
+        price: "From $130",
+        options: ["Short – $130", "Medium – $145", "Long – $160"]
+      }
     ]
   },
   waxing: {
     icon: Heart,
-    title: "Waxing",
+    title: "Waxing Services",
     services: [
-      { title: "Arms + legs waxing", price: "$40-$80" },
-      { title: "Facial waxing", price: "$40" },
-      { title: "Under arm waxing", price: "$20" }
+      { title: "Full Face", price: "$40" },
+      { title: "Eyebrow Wax & Restyling", price: "$25" },
+      { title: "Chin & Upper Lip", price: "$20" },
+      { title: "Legs", price: "$40" },
+      { title: "Hands", price: "$40" },
+      { title: "Underarms", price: "$25" }
     ]
   },
-  kids: {
-    icon: Baby,
-    title: "Kids & Student Cuts",
+  keratin: {
+    icon: Paintbrush,
+    title: "Keratin & Nanoplasty",
     services: [
-      { title: "Kids Cuts 0-6", price: "$15-$20" },
-      { title: "Kids Cuts 7-15", price: "$17-$22" },
-      { title: "Professional blow wave", price: "$12" },
-      { title: "Student ladies cuts", price: "$35-$60" },
-      { title: "Student men's cuts", price: "$20-$25" }
+      {
+        title: "Keratin/Nanoplasty",
+        price: "From $180",
+        options: ["Short – $180", "Medium – $300", "Long – $420"]
+      }
     ]
   },
-  seniors: {
-    icon: Users,
-    title: "Senior Cuts",
+  hairMakeup: {
+    icon: Wand2,
+    title: "Hair Up & Makeup",
     services: [
-      { title: "Senior ladies trim, no wash & dry off", price: "$25-30" },
-      { title: "Senior ladies wash, trim & dry off", price: "$40" },
-      { title: "Senior ladies wash, trim & blow wave", price: "$45" },
-      { title: "Senior men's wash & trim", price: "$20" },
-      { title: "Senior men's buzz cut", price: "$15" }
+      {
+        title: "Hair Up & Makeup Combo",
+        price: "From $160",
+        options: ["Short – $160", "Medium – $170", "Long – $180"]
+      },
+      { title: "Makeup Only", price: "$85" },
+      { title: "Hair Up Only", price: "$85" }
+    ]
+  },
+  grooming: {
+    icon: User,
+    title: "Men's Grooming",
+    services: [
+      {
+        title: "Men's Cut",
+        price: "From $28",
+        options: ["Basic Cut – $28", "Fade – $33", "Wash/Cut – $35"]
+      },
+      { title: "Beards", price: "$10" },
+      { title: "Boys/Kids Cut", price: "$25" }
     ]
   }
 }
@@ -116,7 +106,7 @@ export function ServicesSection({ onServiceClick }) {
   return (
     <section className="px-4 py-16">
       <div className="container max-w-xl mx-auto">
-        <motion.h2 
+        <motion.h2
           className="text-2xl font-bold mb-8 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,13 +150,17 @@ export function ServicesSection({ onServiceClick }) {
                     </div>
                   </div>
                   <Button variant="ghost" size="icon">
-                    Book Now
+                    Book
                   </Button>
                 </motion.div>
               ))}
             </TabsContent>
           ))}
         </Tabs>
+
+        <p className="text-center text-xs text-muted-foreground mt-6 italic">
+          ⚠️ Final price may vary based on hair length, thickness, and service complexity.
+        </p>
       </div>
     </section>
   )

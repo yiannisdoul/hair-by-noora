@@ -1,18 +1,76 @@
-
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { createBooking } from "@/firebase/bookings"
+import { sendBookingEmail } from "@/firebase/sendEmail"
+import { collection, getDocs, query, where } from "firebase/firestore"
+import { db } from "@/firebase/init.js"
 
 export function BookingModal({ isOpen, onClose, service }) {
+  const [step, setStep] = useState(1)
+  const [selectedOption, setSelectedOption] = useState("")
   const [date, setDate] = useState(new Date())
   const [time, setTime] = useState("")
   const [guests, setGuests] = useState(1)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [bookedSlots, setBookedSlots] = useState([])
   const { toast } = useToast()
+
+  useEffect(() => {
+    if (isOpen) {
+      if (!service?.options || service.options.length === 0) {
+        setStep(2)
+      } else {
+        setStep(1)
+      }
+    } else if (service?.options?.length > 0) {
+      setStep(1)
+      setSelectedOption("")
+      setDate(new Date())
+      setTime("")
+      setGuests(1)
+      setName("")
+      setEmail("")
+      setPhone("")
+      setBookedSlots([])
+    }
+  }, [isOpen, service])
+
+  // Load existing bookings for selected date
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      if (!date) return
+
+      const formattedDate = format(date, "dd-MM-yyyy")
+      const q = query(collection(db, "bookings"), where("date", "==", formattedDate))
+      const snapshot = await getDocs(q)
+
+      const slots = snapshot.docs.map((doc) => {
+        const data = doc.data()
+        const [h, m] = data.time.split(":").map(Number)
+        const start = h * 60 + m
+        const end = start + (data.durationMinutes || 30)
+        return { start, end }
+      })
+
+      setBookedSlots(slots)
+    }
+
+    fetchBookedSlots()
+  }, [date])
 
   const timeSlots = [
     "09:00", "09:30", "10:00", "10:30", "11:00",
@@ -20,75 +78,199 @@ export function BookingModal({ isOpen, onClose, service }) {
     "15:00", "15:30", "16:00", "16:30"
   ]
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    toast({
-      title: "Booking Confirmed!",
-      description: `Your appointment for ${service?.title} has been scheduled for ${format(date, "PPP")} at ${time}.`,
+  const getFilteredTimeSlots = () => {
+    const duration = guests * 30
+    const endOfDay = 15 * 60
+
+    return timeSlots.filter((slot) => {
+      const [h, m] = slot.split(":").map(Number)
+      const start = h * 60 + m
+      const end = start + duration
+
+      if (end > endOfDay) return false
+
+      return !bookedSlots.some(({ start: bStart, end: bEnd }) =>
+        Math.max(start, bStart) < Math.min(end, bEnd)
+      )
     })
-    onClose()
+  }
+
+  const filteredSlots = getFilteredTimeSlots()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const bookingData = {
+      name,
+      email,
+      phone,
+      service: service?.title || "",
+      option: selectedOption || "",
+      date: format(date, "dd-MM-yyyy"),
+      time,
+      durationMinutes: guests * 30,
+    }
+
+    const bookingRes = await createBooking(bookingData)
+    if (bookingRes.success) {
+      await sendBookingEmail(bookingData)
+      toast({
+        title: "Booking Confirmed!",
+        description: `Your appointment for ${service?.title} has been scheduled for ${format(date, "PPP")} at ${time}.`,
+      })
+      onClose()
+    } else {
+      toast({
+        title: "Booking failed",
+        description: "Please try again later or contact us directly.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Book Appointment</DialogTitle>
+      <DialogContent
+        className={`${
+          step === 1 ? "max-w-[300px] h-[40vh]" : "max-w-[420px] h-[90vh]"
+        } p-4 pt-3 space-y-3 overflow-y-auto flex flex-col items-center text-center`}
+      >
+        <DialogHeader className="space-y-1 text-center">
+          <DialogTitle className="text-lg font-semibold leading-tight text-center">
+            {step === 1 ? "Choose Length/Type" : "Book an Appointment"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {step === 1
+              ? "Select an option for this service."
+              : "Enter your details to confirm booking."}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label>Selected Service</Label>
-            <Input 
-              value={service?.title} 
-              disabled 
-              className="bg-muted"
-            />
+
+        {step === 1 ? (
+          <div className="grid gap-2 py-4 w-full">
+            {service?.options?.map((option) => (
+              <Button
+                key={option}
+                variant={selectedOption === option ? "default" : "outline"}
+                onClick={() => setSelectedOption(option)}
+                className="w-full"
+              >
+                {option}
+              </Button>
+            ))}
+            <Button
+              onClick={() => setStep(2)}
+              disabled={!selectedOption}
+              className="mt-4 w-full"
+            >
+              Continue
+            </Button>
           </div>
-          <div className="grid gap-2">
-            <Label>Number of Guests</Label>
-            <Input
-              type="number"
-              min="1"
-              max="3"
-              value={guests}
-              onChange={(e) => setGuests(parseInt(e.target.value))}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label>Select Date</Label>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label>Select Time</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {timeSlots.map((slot) => (
-                <Button
-                  key={slot}
-                  type="button"
-                  variant={time === slot ? "default" : "outline"}
-                  onClick={() => setTime(slot)}
-                  className="text-sm"
-                >
-                  {slot}
-                </Button>
-              ))}
+        ) : (
+          <form onSubmit={handleSubmit} className="grid gap-4 py-4 w-full">
+            <div className="grid gap-2">
+              <Label className="text-center">Selected Service</Label>
+              <Input
+                value={
+                  selectedOption
+                    ? `${service?.title} – ${selectedOption}`
+                    : service?.title
+                }
+                disabled
+                className="bg-muted text-center"
+              />
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>Contact Information</Label>
-            <Input placeholder="Full Name" required />
-            <Input type="email" placeholder="Email" required />
-            <Input type="tel" placeholder="Phone" required />
-          </div>
-          <Button type="submit" className="w-full">
-            Confirm Booking
-          </Button>
-        </form>
+
+            <div className="grid gap-2">
+              <Label className="text-center">Booking For</Label>
+              <select
+                value={guests}
+                onChange={(e) => setGuests(parseInt(e.target.value))}
+                className="text-center border rounded-md p-2 w-36 mx-auto"
+              >
+                <option value={1}>Myself</option>
+                <option value={2}>2 People</option>
+                <option value={3}>3 People</option>
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-center">Select Date</Label>
+              <div className="flex justify-center">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md border"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-center">Select Time</Label>
+              <div className="flex justify-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {timeSlots.map((slot) => {
+                  const [h, m] = slot.split(":").map(Number)
+                  const start = h * 60 + m
+                  const end = start + guests * 30
+                  const endOfDay = 15 * 60
+
+                  const isDisabled =
+                    end > endOfDay ||
+                    bookedSlots.some(({ start: bStart, end: bEnd }) =>
+                      Math.max(start, bStart) < Math.min(end, bEnd)
+                    )
+
+                  return (
+                    <Button
+                      key={slot}
+                      type="button"
+                      variant={time === slot ? "default" : "outline"}
+                      onClick={() => !isDisabled && setTime(slot)}
+                      disabled={isDisabled}
+                      className={`text-sm ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {slot}
+                    </Button>
+                  )
+                })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-center">Contact Information</Label>
+              <Input
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="text-center"
+              />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="text-center"
+              />
+              <Input
+                type="tel"
+                placeholder="Phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="text-center"
+              />
+            </div>
+
+            <Button type="submit" className="w-full">
+              Confirm Booking
+            </Button>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

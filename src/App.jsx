@@ -1,12 +1,11 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { BookingModal } from "@/components/booking-modal";
 import { ServicesSection } from "@/components/services-section";
 import { Toaster } from "@/components/ui/toaster";
-import { 
-  Facebook, 
+import {
+  Facebook,
   Instagram,
   MapPin,
   Mail,
@@ -43,27 +42,31 @@ export default function App() {
   const [selectedService, setSelectedService] = useState(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
+  const servicesRef = useRef(null);
+
   const handleServiceClick = (service) => {
     setSelectedService(service);
     setIsBookingOpen(true);
+  };
+
+  const handleScrollToServices = () => {
+    servicesRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="hero-gradient text-white px-4 py-16">
-        <motion.div 
+        <motion.div
           className="container max-w-xl mx-auto text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          {...fadeIn}
         >
           <h1 className="text-4xl font-bold mb-4">Hair by Noora</h1>
           <p className="text-lg mb-8 opacity-90">Your luxury beauty destination in Pakenham</p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-white text-primary hover:bg-white/90"
-            onClick={() => setIsBookingOpen(true)}
+            onClick={handleScrollToServices}
           >
             Book Now
           </Button>
@@ -72,34 +75,36 @@ export default function App() {
 
       {/* About Section */}
       <section className="px-4 py-16 bg-secondary/10">
-        <motion.div 
+        <motion.div
           className="container max-w-xl mx-auto text-center"
           {...fadeIn}
         >
           <h2 className="text-2xl font-bold mb-6">About Us</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Hair by Noora is a luxury beauty destination in Pakenham, offering personalized hair styling, 
-            premium coloring, elegant makeup, and precise waxing services. Whether you're here for a big event 
+            Hair by Noora is a luxury beauty destination in Pakenham, offering personalized hair styling,
+            premium coloring, elegant makeup, and precise waxing services. Whether you're here for a big event
             or a fresh new look, we make you feel radiant and confident every time.
           </p>
         </motion.div>
       </section>
 
       {/* Services Section */}
-      <ServicesSection onServiceClick={handleServiceClick} />
+      <div ref={servicesRef}>
+        <ServicesSection onServiceClick={handleServiceClick} />
+      </div>
 
       {/* Gallery Section */}
       <section className="px-4 py-16 bg-secondary/30">
         <div className="container max-w-xl mx-auto">
-          <motion.h2 
+          <motion.h2
             className="text-2xl font-bold mb-8 text-center"
             {...fadeIn}
           >
             Our Work
           </motion.h2>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
@@ -130,13 +135,13 @@ export default function App() {
       {/* Reviews Section */}
       <section className="px-4 py-16">
         <div className="container max-w-xl mx-auto">
-          <motion.h2 
+          <motion.h2
             className="text-2xl font-bold mb-8 text-center"
             {...fadeIn}
           >
             What Our Clients Say
           </motion.h2>
-          
+
           <div className="grid gap-6">
             {reviews.map((review, index) => (
               <motion.div
@@ -156,12 +161,12 @@ export default function App() {
               </motion.div>
             ))}
           </div>
-          
+
           <div className="text-center mt-8">
-            <Button 
+            <Button
               variant="outline"
               className="mt-4"
-              onClick={() => window.open("https://www.google.com/maps/place/Hair+by+Noora/data=!4m2!3m1!1s0x0:0x47f13d577805c9d0", "_blank")}
+              onClick={() => window.open("https://www.google.com/maps/place/Hair+by+Noora", "_blank")}
             >
               Leave a Review on Google
             </Button>
@@ -182,10 +187,10 @@ export default function App() {
             <p className="text-lg text-muted-foreground">
               Book your appointment today and let us help you achieve your dream style
             </p>
-            <Button 
+            <Button
               size="lg"
               className="bg-primary text-white hover:bg-primary/90"
-              onClick={() => setIsBookingOpen(true)}
+              onClick={handleScrollToServices}
             >
               <Calendar className="w-5 h-5 mr-2" />
               Book Appointment
@@ -216,7 +221,7 @@ export default function App() {
                 </a>
               </div>
             </div>
-            
+
             <div className="flex justify-center md:justify-start gap-4">
               <Button
                 variant="ghost"
@@ -244,7 +249,7 @@ export default function App() {
         onClose={() => setIsBookingOpen(false)}
         service={selectedService}
       />
-      
+
       <Toaster />
     </div>
   );
