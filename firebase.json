@@ -10,10 +10,11 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
+    "redirects": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "!/maintenance.html",   
+        "destination": "/maintenance.html",
+        "type": 302
       }
     ]
   }

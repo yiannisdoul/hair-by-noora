@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { BookingModal } from "@/components/booking-modal";
 import { ServicesSection } from "@/components/services-section";
 import { Toaster } from "@/components/ui/toaster";
+import PhotoGallery from "./components/gallery/PhotoGallery";
+import { galleryPhotos } from "./data/galleryData";
 import {
   Facebook,
   Instagram,
@@ -48,10 +50,25 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="hero-gradient text-white px-4 py-16">
-        <motion.div className="container max-w-xl mx-auto text-center" {...fadeIn}>
-          <h1 className="text-4xl font-bold mb-4">Hair by Noora</h1>
-          <p className="text-lg mb-8 opacity-90">Your luxury beauty destination in Pakenham</p>
+      <section
+        className="relative text-white bg-cover bg-center min-h-[80vh] px-4"
+        style={{ backgroundImage: "url('/images/hairbynoora_final_styled.jpg')" }}
+      >
+        {/* Overlay for contrast */}
+        <div className="absolute inset-0 bg-black/30 z-0"></div>
+
+        {/* Top Text Section - aligned to top 40% */}
+        <motion.div
+          className="relative z-10 max-w-xl mx-auto text-center flex flex-col justify-start"
+          style={{ height: '40vh', paddingTop: '10vh' }}
+          {...fadeIn}
+        >
+          <h1 className="text-4xl font-bold mb-2">Hair by Noora</h1>
+          <p className="text-lg opacity-90">Your luxury beauty destination in Pakenham</p>
+        </motion.div>
+
+        {/* Bottom Button Section - aligned to lower 40% */}
+        <div className="relative z-10 max-w-xl mx-auto text-center flex items-end justify-center" style={{ height: '25vh' }}>
           <Button
             size="lg"
             className="bg-white text-primary hover:bg-white/90"
@@ -59,7 +76,7 @@ export default function App() {
           >
             Book Now
           </Button>
-        </motion.div>
+        </div>
       </section>
 
       {/* About Section */}
@@ -81,28 +98,7 @@ export default function App() {
 
       {/* Gallery Section */}
       <section className="px-4 py-16 bg-secondary/30">
-        <div className="container max-w-xl mx-auto">
-          <motion.h2 className="text-2xl font-bold mb-8 text-center" {...fadeIn}>
-            Our Work
-          </motion.h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <img
-              src="https://storage.googleapis.com/hostinger-horizons-assets-prod/faeeb62e-a0d6-4ca5-9155-cd1dfce24950/20ac78f4a45d3a4e19129d607437116e.png"
-              alt="Hair transformation result"
-              className="w-full aspect-square object-cover rounded-lg transition-transform hover:scale-105"
-            />
-            <img
-              src="https://storage.googleapis.com/hostinger-horizons-assets-prod/faeeb62e-a0d6-4ca5-9155-cd1dfce24950/e8c6085ec775d27a38fb46db7c9345df.jpg"
-              alt="Professional styling result"
-              className="w-full aspect-square object-cover rounded-lg transition-transform hover:scale-105"
-            />
-            <img
-              src="https://storage.googleapis.com/hostinger-horizons-assets-prod/faeeb62e-a0d6-4ca5-9155-cd1dfce24950/adc2282b8062bbb13d3b2ebae4201758.jpg"
-              alt="Hair coloring result"
-              className="w-full aspect-square object-cover rounded-lg transition-transform hover:scale-105"
-            />
-          </div>
-        </div>
+        <PhotoGallery photos={galleryPhotos} />
       </section>
 
       {/* Reviews Section (Shapo Embed) */}
