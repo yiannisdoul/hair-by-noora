@@ -159,8 +159,10 @@ export function ServicesSection({ onServiceClick }) {
         </Tabs>
 
         <p className="text-center text-xs text-muted-foreground mt-6 italic">
-          ⚠️ Final price may vary based on hair length, thickness, and service complexity.
+          ⚠️ Final price may vary based on hair length, thickness, and service complexity.<br />
+          💳 A deposit is required to secure your booking. The amount is calculated based on the service selected and will be applied toward your final total.
         </p>
+
       </div>
     </section>
   )

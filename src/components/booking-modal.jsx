@@ -22,7 +22,7 @@ export function BookingModal({ isOpen, onClose, service }) {
   const [guests, setGuests] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+61");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,9 +40,22 @@ export function BookingModal({ isOpen, onClose, service }) {
       setGuests(1);
       setName("");
       setEmail("");
-      setPhone("");
+      setPhone("+61");
     }
   }, [isOpen, service]);
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    if (value.startsWith("+61")) {
+      // Only allow numbers, limit to +61 plus 10 digits
+      const numbers = value.replace(/[^\d]/g, "");
+      if (numbers.length <= 12) { // +61 (3 chars) + 9 digits
+        setPhone("+61" + numbers.slice(2));
+      }
+    } else {
+      setPhone("+61");
+    }
+  };
 
   const timeSlots = [
     "09:00", "09:30", "10:00", "10:30", "11:00",
@@ -63,6 +76,16 @@ export function BookingModal({ isOpen, onClose, service }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate phone number
+    if (phone.length !== 12) { // +61 + 9 digits
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid Australian mobile number starting with 0",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const bookingData = {
       name,
@@ -209,17 +232,24 @@ export function BookingModal({ isOpen, onClose, service }) {
                 required
                 className="text-center"
               />
-              <Input
-                type="tel"
-                placeholder="Phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="text-center"
-              />
+              <div className="relative">
+                <Input
+                  type="tel"
+                  placeholder="Mobile (start with 0)"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  required
+                  className="text-center"
+                  pattern="\+61\d{9}"
+                  title="Please enter a valid Australian mobile number starting with 0"
+                />
+                <div className="absolute text-xs text-gray-500 w-full text-center mt-1">
+                  Format: +61412345678 (start with 0)
+                </div>
+              </div>
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full mt-6">
               Confirm & Pay Deposit
             </Button>
           </form>
