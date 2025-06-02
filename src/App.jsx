@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { BookingModal } from "@/components/booking-modal";
@@ -6,6 +7,8 @@ import { ServicesSection } from "@/components/services-section";
 import { Toaster } from "@/components/ui/toaster";
 import PhotoGallery from "./components/gallery/PhotoGallery";
 import { galleryPhotos } from "./data/galleryData";
+import SuccessPage from "./pages/SuccessPage";
+import CanceledPage from "./pages/CanceledPage";
 import {
   Facebook,
   Instagram,
@@ -21,7 +24,7 @@ const fadeIn = {
   transition: { duration: 0.6 }
 };
 
-export default function App() {
+function HomePage() {
   const [selectedService, setSelectedService] = useState(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const servicesRef = useRef(null);
@@ -35,7 +38,6 @@ export default function App() {
     servicesRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Inject Shapo script
   useEffect(() => {
     const scriptId = "shapo-embed-js";
     if (!document.getElementById(scriptId)) {
@@ -54,10 +56,8 @@ export default function App() {
         className="relative text-white bg-cover bg-center min-h-[80vh] px-4"
         style={{ backgroundImage: "url('/images/hairbynoora_final_styled.jpg')" }}
       >
-        {/* Overlay for contrast */}
         <div className="absolute inset-0 bg-black/30 z-0"></div>
 
-        {/* Top Text Section - aligned to top 40% */}
         <motion.div
           className="relative z-10 max-w-xl mx-auto text-center flex flex-col justify-start"
           style={{ height: '40vh', paddingTop: '10vh' }}
@@ -67,7 +67,6 @@ export default function App() {
           <p className="text-lg opacity-90">Your luxury beauty destination in Pakenham</p>
         </motion.div>
 
-        {/* Bottom Button Section - aligned to lower 40% */}
         <div className="relative z-10 max-w-xl mx-auto text-center flex items-end justify-center" style={{ height: '25vh' }}>
           <Button
             size="lg"
@@ -101,7 +100,7 @@ export default function App() {
         <PhotoGallery photos={galleryPhotos} />
       </section>
 
-      {/* Reviews Section (Shapo Embed) */}
+      {/* Reviews Section */}
       <section className="px-4 py-16">
         <div className="container max-w-xl mx-auto">
           <motion.h2 className="text-2xl font-bold mb-8 text-center" {...fadeIn}>
@@ -188,5 +187,17 @@ export default function App() {
 
       <Toaster />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/canceled" element={<CanceledPage />} />
+      </Routes>
+    </Router>
   );
 }
