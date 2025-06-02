@@ -1,12 +1,24 @@
 name = "cloudflare-api"
 main = "src/index.js"
-compatibility_date = "2025-06-01"
+compatibility_date = "2024-03-07"
 
 [vars]
 DOMAIN = "http://localhost:5173"
 
 [env.production.vars]
 DOMAIN = "https://hairbynoora.com.au"
+
+# Use these values in your .dev.vars file
+# STRIPE_SECRET_KEY = ""
+# STRIPE_WEBHOOK_SECRET = ""
+# FIREBASE_API_KEY = ""
+# FIREBASE_AUTH_DOMAIN = ""
+# FIREBASE_PROJECT_ID = ""
+# FIREBASE_STORAGE_BUCKET = ""
+# FIREBASE_MESSAGING_SENDER_ID = ""
+# FIREBASE_APP_ID = ""
+# BREVO_API_KEY = ""
+# BREVO_TEMPLATE_ID = ""
 
 [observability]
 enabled = true
