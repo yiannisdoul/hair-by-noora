@@ -1,18 +1,18 @@
 import axios from 'axios';
 
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
-const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
-const BREVO_TEMPLATE_ID = 1;
+export async function sendBookingEmail({ name, email, phone, service, date, time }, env) {
+  const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+  const BREVO_API_KEY = env.VITE_BREVO_API_KEY;
+  const BREVO_TEMPLATE_ID = parseInt(env.VITE_BREVO_TEMPLATE_ID || '1');
 
-export async function sendBookingEmail({ name, email, phone, service, date, time }) {
   try {
     const payload = {
       sender: {
         name: 'Hair By Noora',
-        email: 'bookings@hairbynoora.com.au'
+        email: 'bookings@hairbynoora.com.au',
       },
-      to: [{ email }], // only client receives personalized email
-      bcc: [{ email: 'bookings@hairbynoora.com.au' }], // internal team gets a copy      
+      to: [{ email }],
+      bcc: [{ email: 'bookings@hairbynoora.com.au' }],
       templateId: BREVO_TEMPLATE_ID,
       params: {
         name,
@@ -20,13 +20,13 @@ export async function sendBookingEmail({ name, email, phone, service, date, time
         date,
         time,
         phone,
-        email
-      }
+        email,
+      },
     };
 
     const headers = {
       'api-key': BREVO_API_KEY,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     const response = await axios.post(BREVO_API_URL, payload, { headers });

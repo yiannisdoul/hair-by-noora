@@ -1,104 +1,68 @@
-import React, { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { Calendar } from "@/components/ui/calendar"
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Calendar } from "./ui/calendar";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
-import { createBooking } from "@/firebase/bookings"
-import { sendBookingEmail } from "@/firebase/sendEmail"
-import { collection, getDocs, query, where } from "firebase/firestore"
-import { db } from "@/firebase/init.js"
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Button } from "./ui/button";
+import { useToast } from "./ui/use-toast";
+import { createCheckoutSession } from "@/stripe/stripe";
 
 export function BookingModal({ isOpen, onClose, service }) {
-  const [step, setStep] = useState(1)
-  const [selectedOption, setSelectedOption] = useState("")
-  const [date, setDate] = useState(new Date())
-  const [time, setTime] = useState("")
-  const [guests, setGuests] = useState(1)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [bookedSlots, setBookedSlots] = useState([])
-  const { toast } = useToast()
+  const [step, setStep] = useState(1);
+  const [selectedOption, setSelectedOption] = useState("");
+  const [date, setDate] = useState(new Date());
+  const [time, setTime] = useState("");
+  const [guests, setGuests] = useState(1);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
       if (!service?.options || service.options.length === 0) {
-        setStep(2)
+        setStep(2);
       } else {
-        setStep(1)
+        setStep(1);
       }
-    } else if (service?.options?.length > 0) {
-      setStep(1)
-      setSelectedOption("")
-      setDate(new Date())
-      setTime("")
-      setGuests(1)
-      setName("")
-      setEmail("")
-      setPhone("")
-      setBookedSlots([])
+    } else {
+      setStep(1);
+      setSelectedOption("");
+      setDate(new Date());
+      setTime("");
+      setGuests(1);
+      setName("");
+      setEmail("");
+      setPhone("");
     }
-  }, [isOpen, service])
-
-  // Load existing bookings for selected date
-  useEffect(() => {
-    const fetchBookedSlots = async () => {
-      if (!date) return
-
-      const formattedDate = format(date, "dd-MM-yyyy")
-      const q = query(collection(db, "bookings"), where("date", "==", formattedDate))
-      const snapshot = await getDocs(q)
-
-      const slots = snapshot.docs.map((doc) => {
-        const data = doc.data()
-        const [h, m] = data.time.split(":").map(Number)
-        const start = h * 60 + m
-        const end = start + (data.durationMinutes || 30)
-        return { start, end }
-      })
-
-      setBookedSlots(slots)
-    }
-
-    fetchBookedSlots()
-  }, [date])
+  }, [isOpen, service]);
 
   const timeSlots = [
     "09:00", "09:30", "10:00", "10:30", "11:00",
     "11:30", "13:00", "13:30", "14:00", "14:30",
     "15:00", "15:30", "16:00", "16:30"
-  ]
+  ];
 
   const getFilteredTimeSlots = () => {
-    const duration = guests * 30
-    const endOfDay = 15 * 60
-
+    const duration = guests * 30;
+    const endOfDay = 15 * 60;
     return timeSlots.filter((slot) => {
-      const [h, m] = slot.split(":").map(Number)
-      const start = h * 60 + m
-      const end = start + duration
-
-      if (end > endOfDay) return false
-
-      return !bookedSlots.some(({ start: bStart, end: bEnd }) =>
-        Math.max(start, bStart) < Math.min(end, bEnd)
-      )
-    })
-  }
-
-  const filteredSlots = getFilteredTimeSlots()
+      const [h, m] = slot.split(":").map(Number);
+      const start = h * 60 + m;
+      const end = start + duration;
+      return end <= endOfDay;
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     const bookingData = {
       name,
@@ -108,25 +72,28 @@ export function BookingModal({ isOpen, onClose, service }) {
       option: selectedOption || "",
       date: format(date, "dd-MM-yyyy"),
       time,
+      guests,
       durationMinutes: guests * 30,
-    }
+      price: service?.price || 50,
+    };
 
-    const bookingRes = await createBooking(bookingData)
-    if (bookingRes.success) {
-      await sendBookingEmail(bookingData)
+    try {
+      await createCheckoutSession(bookingData);
       toast({
-        title: "Booking Confirmed!",
-        description: `Your appointment for ${service?.title} has been scheduled for ${format(date, "PPP")} at ${time}.`,
-      })
-      onClose()
-    } else {
+        title: "Redirecting to payment...",
+        description: "Please complete your booking by making the deposit payment.",
+      });
+    } catch (error) {
+      console.error("Booking error:", error);
       toast({
         title: "Booking failed",
         description: "Please try again later or contact us directly.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
+
+  const filteredSlots = getFilteredTimeSlots();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -136,7 +103,7 @@ export function BookingModal({ isOpen, onClose, service }) {
         } p-4 pt-3 space-y-3 overflow-y-auto flex flex-col items-center text-center`}
       >
         <DialogHeader className="space-y-1 text-center">
-          <DialogTitle className="text-lg font-semibold leading-tight text-center">
+          <DialogTitle className="text-lg font-semibold leading-tight">
             {step === 1 ? "Choose Length/Type" : "Book an Appointment"}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -210,31 +177,17 @@ export function BookingModal({ isOpen, onClose, service }) {
               <Label className="text-center">Select Time</Label>
               <div className="flex justify-center">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {timeSlots.map((slot) => {
-                  const [h, m] = slot.split(":").map(Number)
-                  const start = h * 60 + m
-                  const end = start + guests * 30
-                  const endOfDay = 15 * 60
-
-                  const isDisabled =
-                    end > endOfDay ||
-                    bookedSlots.some(({ start: bStart, end: bEnd }) =>
-                      Math.max(start, bStart) < Math.min(end, bEnd)
-                    )
-
-                  return (
+                  {filteredSlots.map((slot) => (
                     <Button
                       key={slot}
                       type="button"
                       variant={time === slot ? "default" : "outline"}
-                      onClick={() => !isDisabled && setTime(slot)}
-                      disabled={isDisabled}
-                      className={`text-sm ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      onClick={() => setTime(slot)}
+                      className="text-sm"
                     >
                       {slot}
                     </Button>
-                  )
-                })}
+                  ))}
                 </div>
               </div>
             </div>
@@ -267,11 +220,11 @@ export function BookingModal({ isOpen, onClose, service }) {
             </div>
 
             <Button type="submit" className="w-full">
-              Confirm Booking
+              Confirm & Pay Deposit
             </Button>
           </form>
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
