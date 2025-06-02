@@ -1,0 +1,12 @@
+name = "cloudflare-api"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+DOMAIN = "http://localhost:5173"
+
+[env.production.vars]
+DOMAIN = "https://hairbynoora.com.au"
+
+[observability]
+enabled = true

@@ -1,2 +1,3 @@
 https://cdn.jsdelivr.net/gh/yiannisdoul/hair-by-noora@7a944edfdd2dbf2fcce777c889d2c65fac3fa963/.gitignore
 .env
+node_modules
