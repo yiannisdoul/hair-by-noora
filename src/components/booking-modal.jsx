@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { Calendar } from "./ui/calendar";
 import {
   Dialog,
@@ -45,36 +45,46 @@ export function BookingModal({ isOpen, onClose, service }) {
   }, [isOpen, service]);
 
   const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    if (value.length <= 10) {
-      setPhone(value);
-    }
+    const value = e.target.value;
+    const onlyDigits = value.replace(/[^\d]/g, "");
+    setPhone(onlyDigits.slice(0, 10));
   };
 
-  const timeSlots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00",
-    "11:30", "13:00", "13:30", "14:00", "14:30",
-    "15:00", "15:30", "16:00", "16:30"
-  ];
+const timeSlots = [
+  "09:00", "09:30", "10:00", "10:30", "11:00",
+  "11:30", "13:00", "13:30", "14:00", "14:30"
+];
+
 
   const getFilteredTimeSlots = () => {
     const duration = guests * 30;
-    const endOfDay = 15 * 60;
-    return timeSlots.filter((slot) => {
+    const now = new Date();
+    return timeSlots.map((slot) => {
       const [h, m] = slot.split(":").map(Number);
+      const slotDate = new Date(date);
+      slotDate.setHours(h, m, 0, 0);
+
       const start = h * 60 + m;
       const end = start + duration;
-      return end <= endOfDay;
+      const endOfDay = 15 * 60;
+
+      const isPast = isToday(date) && slotDate < now;
+      const isOutOfBounds = end > endOfDay;
+
+      return {
+        time: slot,
+        disabled: isPast || isOutOfBounds,
+      };
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!/^0\d{9}$/.test(phone)) {
+    if (phone.length !== 10 || !phone.startsWith("0")) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid 10-digit Australian mobile number starting with 0",
+        description: "Please enter a valid Australian mobile number starting with 0",
         variant: "destructive",
       });
       return;
@@ -82,18 +92,17 @@ export function BookingModal({ isOpen, onClose, service }) {
 
     if (!time) {
       toast({
-        title: "Please select a time",
+        title: "Select a time",
+        description: "Please select a time before continuing.",
         variant: "destructive",
       });
       return;
     }
 
-    const formattedPhone = "+61" + phone.slice(1);
-
     const bookingData = {
       name,
       email,
-      phone: formattedPhone,
+      phone,
       service: service?.title || "",
       option: selectedOption || "",
       date: format(date, "dd-MM-yyyy"),
@@ -195,6 +204,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                   selected={date}
                   onSelect={setDate}
                   className="rounded-md border"
+                  disabled={(d) => d < new Date().setHours(0, 0, 0, 0)}
                 />
               </div>
             </div>
@@ -203,13 +213,14 @@ export function BookingModal({ isOpen, onClose, service }) {
               <Label className="text-center">Select Time</Label>
               <div className="flex justify-center">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {filteredSlots.map((slot) => (
+                  {filteredSlots.map(({ time: slot, disabled }) => (
                     <Button
                       key={slot}
                       type="button"
-                      variant={time === slot ? "default" : "outline"}
-                      onClick={() => setTime(slot)}
-                      className="text-sm"
+                      variant={time === slot && !disabled ? "default" : "outline"}
+                      onClick={() => !disabled && setTime(slot)}
+                      disabled={disabled}
+                      className={`text-sm ${disabled ? "line-through opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {slot}
                     </Button>
@@ -243,7 +254,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                 required
                 className="text-center"
                 pattern="0\d{9}"
-                title="Please enter a valid 10-digit Australian mobile number starting with 0"
+                title="Please enter a valid Australian mobile number starting with 0"
               />
             </div>
 
