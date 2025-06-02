@@ -22,7 +22,7 @@ export function BookingModal({ isOpen, onClose, service }) {
   const [guests, setGuests] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+61");
+  const [phone, setPhone] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,20 +40,14 @@ export function BookingModal({ isOpen, onClose, service }) {
       setGuests(1);
       setName("");
       setEmail("");
-      setPhone("+61");
+      setPhone("");
     }
   }, [isOpen, service]);
 
   const handlePhoneChange = (e) => {
-    const value = e.target.value;
-    if (value.startsWith("+61")) {
-      // Only allow numbers, limit to +61 plus 10 digits
-      const numbers = value.replace(/[^\d]/g, "");
-      if (numbers.length <= 12) { // +61 (3 chars) + 9 digits
-        setPhone("+61" + numbers.slice(2));
-      }
-    } else {
-      setPhone("+61");
+    const value = e.target.value.replace(/\D/g, "");
+    if (value.length <= 10) {
+      setPhone(value);
     }
   };
 
@@ -77,20 +71,29 @@ export function BookingModal({ isOpen, onClose, service }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate phone number
-    if (phone.length !== 12) { // +61 + 9 digits
+    if (!/^0\d{9}$/.test(phone)) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid Australian mobile number starting with 0",
+        description: "Please enter a valid 10-digit Australian mobile number starting with 0",
         variant: "destructive",
       });
       return;
     }
 
+    if (!time) {
+      toast({
+        title: "Please select a time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formattedPhone = "+61" + phone.slice(1);
+
     const bookingData = {
       name,
       email,
-      phone,
+      phone: formattedPhone,
       service: service?.title || "",
       option: selectedOption || "",
       date: format(date, "dd-MM-yyyy"),
@@ -232,24 +235,19 @@ export function BookingModal({ isOpen, onClose, service }) {
                 required
                 className="text-center"
               />
-              <div className="relative">
-                <Input
-                  type="tel"
-                  placeholder="Mobile (start with 0)"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  required
-                  className="text-center"
-                  pattern="\+61\d{9}"
-                  title="Please enter a valid Australian mobile number starting with 0"
-                />
-                <div className="absolute text-xs text-gray-500 w-full text-center mt-1">
-                  Format: +61412345678 (start with 0)
-                </div>
-              </div>
+              <Input
+                type="tel"
+                placeholder="Phone Number e.g. 0412345678"
+                value={phone}
+                onChange={handlePhoneChange}
+                required
+                className="text-center"
+                pattern="0\d{9}"
+                title="Please enter a valid 10-digit Australian mobile number starting with 0"
+              />
             </div>
 
-            <Button type="submit" className="w-full mt-6">
+            <Button type="submit" className="w-full mt-6" disabled={!time}>
               Confirm & Pay Deposit
             </Button>
           </form>
