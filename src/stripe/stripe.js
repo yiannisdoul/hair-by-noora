@@ -4,6 +4,7 @@ let stripePromise = null;
 
 export async function createCheckoutSession(bookingData) {
   try {
+    // Use correct env var name
     if (!stripePromise) {
       stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
     }
@@ -13,14 +14,13 @@ export async function createCheckoutSession(bookingData) {
       throw new Error('Failed to initialize Stripe');
     }
 
-    const isLocal = window.location.hostname === 'localhost';
-    const baseUrl = isLocal
-      ? 'http://127.0.0.1:8787'
-      : 'https://hairbynoora.com.au';
+    // Use API base URL from .env
+    const BASE_API = import.meta.env.VITE_API_BASE;
+    const apiUrl = `${BASE_API}/create-checkout-session`;
 
     console.log('Creating checkout session with data:', bookingData);
 
-    const response = await fetch(`${baseUrl}/api/create-checkout-session`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData),
@@ -38,7 +38,7 @@ export async function createCheckoutSession(bookingData) {
       throw new Error('No session ID returned from server');
     }
 
-    // Use the URL directly from Stripe instead of redirectToCheckout
+    // Redirect to Stripe Checkout
     window.location.href = url;
   } catch (err) {
     console.error('Stripe checkout error:', err);

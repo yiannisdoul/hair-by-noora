@@ -10,20 +10,58 @@ function calculateDepositPercentage(basePrice) {
   return 30; // Default to 30% for any higher amount
 }
 
-export async function handleCreateCheckoutSession(context) {
-  try {
-    const { STRIPE_SECRET_KEY, DOMAIN } = context.env;
-    const body = await context.request.json();
+export async function createCheckoutSession(request, env) {
+  console.log("✅ Running latest create-checkout-session");
 
-    console.log('Processing checkout request:', body);
+  // Handle CORS preflight requests
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
+  // Only allow POST requests
+  if (request.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  try {
+    const { STRIPE_SECRET_KEY, DOMAIN } = env;
+    const body = await request.json();
+
+    console.log('📦 Received booking data:', body);
+
+    if (!body.price || !body.service) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: price or service' }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    // Extract numeric price from string like "From $35" or "Long – $45"
-    const priceMatch = body.price.match(/\$(\d+)/);
-    const basePrice = priceMatch ? Number(priceMatch[1]) : 50;
-    
-    // Calculate deposit based on the new brackets
+    // Safe match
+    const priceMatch = (body.price || '').match(/\$(\d+)/);
+    if (!priceMatch) {
+      return new Response(JSON.stringify({ error: 'Invalid price format' }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+
+    const basePrice = Number(priceMatch[1]);
+
+    // Calculate deposit based on brackets
     const depositPercentage = calculateDepositPercentage(basePrice);
     const depositAmount = Math.floor(basePrice * (depositPercentage / 100) * 100); // Convert to cents
 
@@ -51,24 +89,27 @@ export async function handleCreateCheckoutSession(context) {
       },
     });
 
-    console.log('Stripe response:', session);
+    console.log('✅ Stripe session created:', session.id);
 
-    return new Response(JSON.stringify({ sessionId: session.id, url: session.url }), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+    return new Response(
+      JSON.stringify({ sessionId: session.id, url: session.url }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      }
+    );
 
   } catch (err) {
-    console.error('Checkout session error:', err);
+    console.error('❌ Checkout session error:', err);
     return new Response(
-      JSON.stringify({ error: err.message || 'Internal server error' }), 
-      { 
+      JSON.stringify({ error: err.message || 'Internal server error' }),
+      {
         status: 500,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',

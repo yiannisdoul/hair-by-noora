@@ -168,5 +168,6 @@ dist
 
 # wrangler project
 
+.env
 .dev.vars
 .wrangler/
