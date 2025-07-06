@@ -1,4 +1,5 @@
 import { createBooking } from '../firebase/bookings.js';
+import { GoogleCalendarService } from '../services/google-calendar.js';
 
 export async function handleManualBooking({ request, env }) {
   try {
@@ -60,11 +61,23 @@ export async function handleManualBooking({ request, env }) {
 
     console.log('Manual booking created successfully:', result.id);
 
+    // Add to Google Calendar
+    console.log('📅 Creating Google Calendar event for manual booking');
+    const calendarService = new GoogleCalendarService(env);
+    const bookingWithId = { ...booking, id: result.id };
+    const calendarResult = await calendarService.createCalendarEvent(bookingWithId);
+    
+    if (calendarResult.success) {
+      console.log('✅ Calendar event created successfully:', calendarResult.eventId);
+    } else {
+      console.error('❌ Failed to create calendar event:', calendarResult.error);
+    }
+
     // Optionally send confirmation email for manual bookings
     if (bookingData.sendEmail) {
       try {
         const { sendBookingEmail } = await import('./stripe-webhook.js');
-        const emailResult = await sendBookingEmail(booking, env);
+        const emailResult = await sendBookingEmail(bookingWithId, env);
         console.log('Email result for manual booking:', emailResult);
       } catch (emailError) {
         console.error('Failed to send email for manual booking:', emailError);
@@ -76,7 +89,9 @@ export async function handleManualBooking({ request, env }) {
       JSON.stringify({ 
         success: true, 
         bookingId: result.id,
-        message: 'Manual booking created successfully'
+        message: 'Manual booking created successfully',
+        calendarEventCreated: calendarResult.success,
+        calendarEventId: calendarResult.eventId
       }),
       { 
         status: 201,

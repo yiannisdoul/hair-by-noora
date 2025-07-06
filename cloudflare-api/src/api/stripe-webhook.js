@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import axios from 'axios';
+import { GoogleCalendarService } from '../services/google-calendar.js';
 
 async function sendBookingEmail(booking, env) {
   const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
@@ -138,8 +139,24 @@ export async function handleStripeWebhook({ request, env }) {
       console.error('❌ Failed to send email:', emailResult.error);
     }
 
+    // Add booking to Google Calendar
+    console.log('📅 Creating Google Calendar event');
+    const calendarService = new GoogleCalendarService(env);
+    const calendarResult = await calendarService.createCalendarEvent(booking);
+    
+    if (calendarResult.success) {
+      console.log('✅ Calendar event created successfully:', calendarResult.eventId);
+    } else {
+      console.error('❌ Failed to create calendar event:', calendarResult.error);
+    }
+
     console.log('=== Webhook Completed Successfully ===');
-    return new Response(JSON.stringify({ success: true, emailSent: emailResult.success }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      emailSent: emailResult.success,
+      calendarEventCreated: calendarResult.success,
+      calendarEventId: calendarResult.eventId 
+    }), {
       headers: { 'Content-Type': 'application/json' }
     });
 
