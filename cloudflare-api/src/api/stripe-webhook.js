@@ -3,10 +3,16 @@ import axios from 'axios';
 import { GoogleCalendarService } from '../services/google-calendar.js';
 import { createBooking } from '../firebase/bookings.js';
 
-async function sendBookingEmail(booking, env) {
+export async function sendBookingEmail(booking, env) {
   const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
   const BREVO_API_KEY = env.BREVO_API_KEY;
   const BREVO_TEMPLATE_ID = parseInt(env.BREVO_TEMPLATE_ID || '1');
+
+  // Dynamic email configuration
+  const FROM_EMAIL = env.BREVO_FROM_EMAIL || 'bookings@hairbynoora.com.au';
+  const FROM_NAME = env.BREVO_FROM_NAME || 'Hair by Noora';
+  const BCC_EMAIL = env.BREVO_BCC_EMAIL || 'bookings@hairbynoora.com.au';
+
 
   // Add validation
   if (!BREVO_API_KEY) {
@@ -14,27 +20,15 @@ async function sendBookingEmail(booking, env) {
     return { success: false, error: 'BREVO_API_KEY not configured' };
   }
 
-  console.log('Environment check:', {
-    hasBrevoKey: !!BREVO_API_KEY,
-    templateId: BREVO_TEMPLATE_ID
-  });
-
   try {
-    console.log('Sending email with data:', {
-      email: booking.email,
-      name: booking.name,
-      service: booking.service,
-      date: booking.date,
-      time: booking.time
-    });
     
     const payload = {
       sender: {
-        name: 'Hair By Noora',
-        email: 'bookings@hairbynoora.com.au'
+        name: FROM_NAME,
+        email: FROM_EMAIL
       },
       to: [{ email: booking.email, name: booking.name }],
-      bcc: [{ email: 'bookings@hairbynoora.com.au' }],
+      bcc: [{ email: BCC_EMAIL }],
       templateId: BREVO_TEMPLATE_ID,
       params: {
         name: booking.name,
@@ -54,18 +48,11 @@ async function sendBookingEmail(booking, env) {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
-
-    console.log('Sending request to Brevo API');
-    console.log('Template ID:', BREVO_TEMPLATE_ID);
-    console.log('Recipient:', booking.email);
-    
+ 
     const response = await axios.post(BREVO_API_URL, payload, { 
       headers,
       timeout: 10000 // 10 second timeout
     });
-    
-    console.log('Brevo API response status:', response.status);
-    console.log('Brevo API response:', response.data);
     
     return { success: true, data: response.data };
   } catch (error) {
@@ -77,7 +64,6 @@ async function sendBookingEmail(booking, env) {
     });
     
     // Try fallback simple email if template fails
-    console.log('Attempting fallback simple email...');
     const fallbackResult = await sendSimpleBookingEmail(booking, env);
     
     if (fallbackResult.success) {
@@ -126,11 +112,11 @@ async function sendSimpleBookingEmail(booking, env) {
 
     const payload = {
       sender: {
-        name: 'Hair By Noora',
-        email: 'bookings@hairbynoora.com.au'
+        name: FROM_NAME,
+        email: FROM_EMAIL
       },
       to: [{ email: booking.email, name: booking.name }],
-      bcc: [{ email: 'bookings@hairbynoora.com.au' }],
+      bcc: [{ email: BCC_EMAIL }],
       subject: 'Booking Confirmation - Hair by Noora',
       htmlContent: emailContent
     };
@@ -152,15 +138,7 @@ async function sendSimpleBookingEmail(booking, env) {
 }
 
 export async function handleStripeWebhook({ request, env }) {
-  console.log('=== Webhook Started ===');
-  console.log('Environment check:', {
-    hasStripeSecret: !!env.STRIPE_SECRET_KEY,
-    hasWebhookSecret: !!env.STRIPE_WEBHOOK_SECRET,
-    hasBrevoKey: !!env.BREVO_API_KEY,
-    brevoTemplateId: env.BREVO_TEMPLATE_ID,
-    hasFirebaseCredentials: !!(env.FIREBASE_PROJECT_ID && env.FIREBASE_PRIVATE_KEY)
-  });
-
+  
   try {
     const signature = request.headers.get('stripe-signature');
     console.log('Stripe signature present:', !!signature);
