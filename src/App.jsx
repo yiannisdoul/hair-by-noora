@@ -9,6 +9,7 @@ import PhotoGallery from "./components/gallery/PhotoGallery";
 import { galleryPhotos } from "./data/galleryData";
 import SuccessPage from "./pages/SuccessPage";
 import CanceledPage from "./pages/CanceledPage";
+import AdminPage from "./pages/AdminPage";
 import {
   Facebook,
   Instagram,
@@ -197,6 +198,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/canceled" element={<CanceledPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </Router>
   );

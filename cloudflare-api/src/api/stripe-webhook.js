@@ -6,6 +6,17 @@ async function sendBookingEmail(booking, env) {
   const BREVO_API_KEY = env.BREVO_API_KEY;
   const BREVO_TEMPLATE_ID = parseInt(env.BREVO_TEMPLATE_ID || '1');
 
+  // Add validation
+  if (!BREVO_API_KEY) {
+    console.error('BREVO_API_KEY environment variable is not set');
+    return { success: false, error: 'BREVO_API_KEY not configured' };
+  }
+
+  console.log('Environment check:', {
+    hasBrevoKey: !!BREVO_API_KEY,
+    templateId: BREVO_TEMPLATE_ID
+  });
+
   try {
     console.log('Sending email with data:', booking);
     
@@ -50,13 +61,26 @@ async function sendBookingEmail(booking, env) {
 }
 
 export async function handleStripeWebhook({ request, env }) {
+  console.log('=== Webhook Started ===');
+  console.log('Environment check:', {
+    hasStripeSecret: !!env.STRIPE_SECRET_KEY,
+    hasWebhookSecret: !!env.STRIPE_WEBHOOK_SECRET,
+    hasBrevoKey: !!env.BREVO_API_KEY,
+    brevoTemplateId: env.BREVO_TEMPLATE_ID
+  });
+
   try {
     const signature = request.headers.get('stripe-signature');
+    console.log('Stripe signature present:', !!signature);
+    
     if (!signature) {
+      console.error('Missing Stripe signature');
       throw new Error('No Stripe signature found');
     }
 
     const body = await request.text();
+    console.log('Request body length:', body.length);
+    
     const stripe = new Stripe(env.STRIPE_SECRET_KEY);
     
     // Use constructEventAsync instead of constructEvent
@@ -67,19 +91,24 @@ export async function handleStripeWebhook({ request, env }) {
         signature,
         env.STRIPE_WEBHOOK_SECRET
       );
+      console.log('✅ Webhook signature verified');
     } catch (err) {
+      console.error('❌ Webhook signature verification failed:', err.message);
       throw new Error(`Webhook signature verification failed: ${err.message}`);
     }
 
-    console.log('Processing webhook event:', event.type);
+    console.log('Processing webhook event:', event.type, 'ID:', event.id);
 
     if (event.type !== 'checkout.session.completed') {
+      console.log('Ignoring event type:', event.type);
       return new Response(JSON.stringify({ received: true }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
     const session = event.data.object;
+    console.log('Session metadata:', session.metadata);
+    
     if (!session.metadata) {
       throw new Error('Missing metadata in session');
     }
@@ -100,19 +129,26 @@ export async function handleStripeWebhook({ request, env }) {
       status: 'confirmed'
     };
 
-    console.log('Sending confirmation email');
+    console.log('📧 Attempting to send confirmation email to:', booking.email);
     const emailResult = await sendBookingEmail(booking, env);
     
-    if (!emailResult.success) {
-      console.error('Failed to send email:', emailResult.error);
+    if (emailResult.success) {
+      console.log('✅ Email sent successfully');
+    } else {
+      console.error('❌ Failed to send email:', emailResult.error);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    console.log('=== Webhook Completed Successfully ===');
+    return new Response(JSON.stringify({ success: true, emailSent: emailResult.success }), {
       headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('=== Webhook Error ===', {
+      message: err.message,
+      stack: err.stack,
+      timestamp: new Date().toISOString()
+    });
     return new Response(
       JSON.stringify({ error: err.message || 'Internal server error' }),
       { 
