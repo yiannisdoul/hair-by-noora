@@ -1,11 +1,13 @@
 import { handleCreateCheckoutSession } from './api/create-checkout-session.js';
 import { handleStripeWebhook } from './api/stripe-webhook.js';
 import { handleCheckSession } from './api/check-session.js';
+import { handleManualBooking } from './api/manual-booking.js';
+import { handleTestEmail } from './api/test-email.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, stripe-signature',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, stripe-signature',
 };
 
 export default {
@@ -39,6 +41,10 @@ export default {
         response = await handleStripeWebhook({ request, env });
       } else if (pathname === '/api/check-session' && request.method === 'GET') {
         response = await handleCheckSession({ request, env });
+      } else if (pathname === '/api/manual-booking' && request.method === 'POST') {
+        response = await handleManualBooking({ request, env });
+      } else if (pathname === '/api/test-email' && request.method === 'POST') {
+        response = await handleTestEmail({ request, env });
       } else {
         return new Response('Not found', { 
           status: 404,

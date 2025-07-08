@@ -5,16 +5,19 @@ export async function sendBookingEmail({ name, email, phone, service, date, time
   const BREVO_API_KEY = env.BREVO_API_KEY; // Remove VITE_ prefix
   const BREVO_TEMPLATE_ID = parseInt(env.BREVO_TEMPLATE_ID); // Remove VITE_ prefix
 
+  const FROM_EMAIL = env.BREVO_FROM_EMAIL || 'bookings@hairbynoora.com.au';
+  const FROM_NAME = env.BREVO_FROM_NAME || 'Hair by Noora';
+  const BCC_EMAIL = env.BREVO_BCC_EMAIL || 'bookings@hairbynoora.com.au';
+
   try {
-    console.log('Sending email with data:', { name, email, service, date, time });
     
     const payload = {
       sender: {
-        name: 'Hair By Noora',
-        email: 'bookings@hairbynoora.com.au',
+        name: FROM_NAME,
+        email: FROM_EMAIL,
       },
       to: [{ email }],
-      bcc: [{ email: 'bookings@hairbynoora.com.au' }],
+      bcc: [{ email: BCC_EMAIL }],
       templateId: BREVO_TEMPLATE_ID,
       params: {
         name,
@@ -32,11 +35,8 @@ export async function sendBookingEmail({ name, email, phone, service, date, time
       'Accept': 'application/json',
     };
 
-    console.log('Sending request to Brevo:', { url: BREVO_API_URL, templateId: BREVO_TEMPLATE_ID });
-    
     const response = await axios.post(BREVO_API_URL, payload, { headers });
-    console.log('Brevo API response:', response.data);
-    
+   
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Failed to send email:', error.response?.data || error.message);

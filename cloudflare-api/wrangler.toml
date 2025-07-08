@@ -7,6 +7,9 @@ DOMAIN = "http://localhost:5173"
 
 [env.production.vars]
 DOMAIN = "https://hairbynoora.com.au"
+BREVO_FROM_EMAIL = "bookings@hairbynoora.com.au"
+BREVO_FROM_NAME = "Hair by Noora"
+BREVO_BCC_EMAIL = "bookings@hairbynoora.com.au"
 
 # Use these values in your .dev.vars file
 # STRIPE_SECRET_KEY = ""

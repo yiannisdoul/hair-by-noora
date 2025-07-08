@@ -18,8 +18,6 @@ export async function createCheckoutSession(bookingData) {
       ? 'http://127.0.0.1:8787'
       : 'https://hairbynoora.com.au';
 
-    console.log('Creating checkout session with data:', bookingData);
-
     const response = await fetch(`${baseUrl}/api/create-checkout-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -32,8 +30,7 @@ export async function createCheckoutSession(bookingData) {
     }
 
     const { sessionId, url } = await response.json();
-    console.log('Received session ID:', sessionId);
-
+    
     if (!sessionId) {
       throw new Error('No session ID returned from server');
     }
