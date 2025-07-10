@@ -138,11 +138,18 @@ async function sendSimpleBookingEmail(booking, env) {
 }
 
 export async function handleStripeWebhook({ request, env }) {
-  
+  console.log('=== WEBHOOK RECEIVED ===');
+
   try {
     const signature = request.headers.get('stripe-signature');
     console.log('Stripe signature present:', !!signature);
     
+     // Log all request headers for debugging
+    console.log('Request headers:');
+    for (const [key, value] of request.headers.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+
     if (!signature) {
       console.error('Missing Stripe signature');
       throw new Error('No Stripe signature found');
@@ -177,20 +184,19 @@ export async function handleStripeWebhook({ request, env }) {
     }
 
     const session = event.data.object;
-    console.log('Session metadata:', session.metadata);
-    
-    if (!session.metadata) {
-      throw new Error('Missing metadata in session');
-    }
+    console.log('Full session object:', JSON.stringify(session, null, 2));
 
+    // Extract metadata more safely
+    const metadata = session.metadata || {};
+  
     const booking = {
-      name: session.metadata.name,
-      email: session.metadata.email,
-      phone: session.metadata.phone,
-      service: session.metadata.service,
-      option: session.metadata.option,
-      date: session.metadata.date,
-      time: session.metadata.time,
+      name: metadata.customerName || metadata.name || 'Customer',
+      email: metadata.customerEmail || metadata.email || 'No email provided',
+      phone: metadata.phone || 'No phone provided',
+      service: metadata.service || 'Unknown service',
+      option: metadata.option || '',
+      date: metadata.date,
+      time: metadata.time || '12:00',
       guests: parseInt(session.metadata.guests || '1'),
       durationMinutes: parseInt(session.metadata.durationMinutes || '30'),
       paymentIntentId: session.payment_intent,

@@ -42,7 +42,8 @@ const AdminBookingForm = ({ onBookingCreated }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/manual-booking', {
+     
+      const response = await fetch(`${import.meta.env.VITE_API_BASE}/manual-booking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,9 +53,14 @@ const AdminBookingForm = ({ onBookingCreated }) => {
 
       const result = await response.json();
 
+       // Check if response is OK
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create booking');
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        throw new Error(`API error: ${response.status} - ${errorText.substring(0, 100)}`);
       }
+
+      console.log('API response:', result);
 
       // Reset form
       setFormData({

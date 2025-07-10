@@ -4,7 +4,8 @@ export class GoogleCalendarService {
     this.calendarId = env.GOOGLE_CALENDAR_ID || 'primary';
     this.projectId = env.GOOGLE_PROJECT_ID;
     this.serviceAccountEmail = env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    this.privateKey = env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+     // Reconstruct the key
+    this.privateKey = env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
     this.timezone = env.TIMEZONE || 'Australia/Melbourne';
   }
 
@@ -247,38 +248,4 @@ export class GoogleCalendarService {
           `.trim();
   }
 
-  // Optional: Add method to send calendar invite manually via email
-  async sendCalendarInviteEmail(booking, eventData) {
-    try {
-      const icsContent = this.generateICSFile(booking, eventData);
-      return { success: true, icsContent };
-    } catch (error) {
-      console.error('Failed to generate calendar invite:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  generateICSFile(booking, eventData) {
-    const startTime = new Date(`${booking.date}T${booking.time}:00`);
-    const endTime = new Date(startTime.getTime() + (booking.durationMinutes * 60 * 1000));
-    
-    const formatDate = (date) => {
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    };
-
-    return `BEGIN:VCALENDAR
-      VERSION:2.0
-      PRODID:-//Hair by Noora//Booking System//EN
-      BEGIN:VEVENT
-      UID:${eventData.id}@hairbynoora.com.au
-      DTSTAMP:${formatDate(new Date())}
-      DTSTART:${formatDate(startTime)}
-      DTEND:${formatDate(endTime)}
-      SUMMARY:${booking.service} - Hair by Noora
-      DESCRIPTION:${this.generateEventDescription(booking)}
-      LOCATION:Hair by Noora Salon
-      STATUS:CONFIRMED
-      END:VEVENT
-      END:VCALENDAR`;
-  }
 }

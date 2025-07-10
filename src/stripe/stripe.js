@@ -14,11 +14,11 @@ export async function createCheckoutSession(bookingData) {
     }
 
     const isLocal = window.location.hostname === 'localhost';
-    const baseUrl = isLocal
-      ? 'http://127.0.0.1:8787'
-      : 'https://hairbynoora.com.au';
+    // const baseUrl = isLocal
+    //   ? 'http://127.0.0.1:8787'
+    //   : 'https://hairbynoora.com.au';
 
-    const response = await fetch(`${baseUrl}/api/create-checkout-session`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE}/create-checkout-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData),

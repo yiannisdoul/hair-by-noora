@@ -31,7 +31,19 @@ export async function handleCreateCheckoutSession(context) {
       ],
       success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${DOMAIN}/canceled`,
-      metadata: body,
+      //metadata: body,
+      metadata: {
+    bookingId: body.bookingId || '',
+    name: body.name,
+    email: body.email,
+    phone: body.phone,
+    service: body.service,
+    option: body.option || '',
+    date: body.date,
+    time: body.time,
+    guests: body.guests || '1',
+    durationMinutes: body.durationMinutes || '30'
+  },
     });
 
     console.log('Stripe response:', session);

@@ -4,7 +4,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 export const createCheckoutSession = async (bookingData) => {
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE}/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -13,7 +13,9 @@ export const createCheckoutSession = async (bookingData) => {
     });
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      const errorText = await response.text();
+      console.error('Stripe API error:', response.status, errorText.substring(0, 200));
+      throw new Error(`Failed to create checkout session: ${response.status}`);
     }
 
     const { sessionId } = await response.json();

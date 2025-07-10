@@ -13,7 +13,7 @@ export default function SuccessPage() {
         const isLocal = window.location.hostname === "localhost";
         const baseUrl = isLocal ? "http://127.0.0.1:8787" : "https://hairbynoora.com.au";
         
-        const response = await fetch(`${baseUrl}/api/check-session?session_id=${sessionId}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE}/check-session?session_id=${sessionId}`);
         const data = await response.json();
         
         if (data.success) {

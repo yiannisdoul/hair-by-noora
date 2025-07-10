@@ -3,10 +3,17 @@ import { GoogleCalendarService } from '../services/google-calendar.js';
 
 export async function handleManualBooking({ request, env }) {
   try {
-    // Only allow POST requests
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
-    }
+    // CORS headers
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
+  
+  // Handle OPTIONS (preflight) requests
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
     const bookingData = await request.json();
     
@@ -18,7 +25,10 @@ export async function handleManualBooking({ request, env }) {
           JSON.stringify({ error: `Missing required field: ${field}` }),
           { 
             status: 400,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+              ...corsHeaders,  // Add the CORS headers here
+              'Content-Type': 'application/json' 
+            }
           }
         );
       }
@@ -54,7 +64,10 @@ export async function handleManualBooking({ request, env }) {
         JSON.stringify({ error: result.message }),
         { 
           status: 500,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            ...corsHeaders,  // Add the CORS headers here
+            'Content-Type': 'application/json' 
+          }
         }
       );
     }
@@ -69,6 +82,7 @@ export async function handleManualBooking({ request, env }) {
     
     if (calendarResult.success) {
       console.log('✅ Calendar event created successfully:', calendarResult.eventId);
+
     } else {
       console.error('❌ Failed to create calendar event:', calendarResult.error);
     }
@@ -95,7 +109,10 @@ export async function handleManualBooking({ request, env }) {
       }),
       { 
         status: 201,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json" 
+       } 
       }
     );
 
@@ -105,7 +122,10 @@ export async function handleManualBooking({ request, env }) {
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json" 
+        } 
       }
     );
   }

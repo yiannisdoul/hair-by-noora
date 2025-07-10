@@ -12,7 +12,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/use-toast";
-import { createCheckoutSession } from "@/stripe/stripe";
+//import { createCheckoutSession } from "@/stripe/stripe";
+import { createCheckoutSession } from '../stripe/index';
 
 export function BookingModal({ isOpen, onClose, service }) {
   const [step, setStep] = useState(1);
