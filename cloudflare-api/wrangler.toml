@@ -5,11 +5,14 @@ compatibility_date = "2024-03-07"
 [vars]
 DOMAIN = "http://localhost:5173"
 
+[env.production]
+name = "hair-by-noora-api-production"
 [env.production.vars]
 DOMAIN = "https://hairbynoora.com.au"
 BREVO_FROM_EMAIL = "bookings@hairbynoora.com.au"
 BREVO_FROM_NAME = "Hair by Noora"
 BREVO_BCC_EMAIL = "bookings@hairbynoora.com.au"
+TIMEZONE= "Australia/Melbourne"
 
 # Use these values in your .dev.vars file
 # STRIPE_SECRET_KEY = ""
@@ -22,6 +25,9 @@ BREVO_BCC_EMAIL = "bookings@hairbynoora.com.au"
 # FIREBASE_APP_ID = ""
 # BREVO_API_KEY = ""
 # BREVO_TEMPLATE_ID = ""
+# TWILIO_ACCOUNT_SID = ""
+# TWILIO_AUTH_TOKEN = ""
+# TWILIO_WHATSAPP_NUMBER = ""  # This should be in the format: +14155238886
 
 [observability]
 enabled = true

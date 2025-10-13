@@ -3,6 +3,7 @@ import { handleStripeWebhook } from './api/stripe-webhook.js';
 import { handleCheckSession } from './api/check-session.js';
 import { handleManualBooking } from './api/manual-booking.js';
 import { handleTestEmail } from './api/test-email.js';
+import { handleNotifyBookingAttempt } from './api/notify-booking-attempt.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +46,9 @@ export default {
         response = await handleManualBooking({ request, env });
       } else if (pathname === '/api/test-email' && request.method === 'POST') {
         response = await handleTestEmail({ request, env });
+      } else if (pathname === '/api/notify-booking-attempt' && request.method === 'POST') {
+         console.log('📧 Routing to notify booking attempt handler');
+        response = await handleNotifyBookingAttempt({ request, env });
       } else {
         return new Response('Not found', { 
           status: 404,

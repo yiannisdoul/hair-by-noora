@@ -4,25 +4,26 @@ export const serviceCategories = {
     services: [
       {
         title: "Dry Cut (no wash/blowdry)",
-        price: "From $35",
+        price: "From $45.09",
         duration: 30,
-        options: ["Short – $35", "Medium – $40", "Long – $45"]
+        options: ["Short – $45.09", "Medium – $50.69", "Long – $56.28"]
       },
       {
         title: "Cut, Wash & Blow Wave",
-        price: "From $60",
+        price: "From $67.48",
         duration: 60,
-        options: ["Short – $60", "Medium – $70", "Long – $80"]
+        options: ["Short – $67.48", "Medium – $78.68", "Long – $89.87"]
       },
       { 
         title: "Colour – Roots Touch-Up", 
-        price: "From $70",
+        price: "$78.68",
         duration: 90
       },
       { 
         title: "Full Colour", 
-        price: "From $110",
-        duration: 120
+        price: "From $134.66",
+        duration: 120,
+        options: ["Short – $134.66", "Medium – $157.05", "Long – $179.44"]
       }
     ]
   },
@@ -31,33 +32,33 @@ export const serviceCategories = {
     services: [
       {
         title: "Full Head Foils",
-        price: "From $190",
+        price: "From $213.03",
         duration: 180,
-        options: ["Short – $190", "Medium – $210", "Long – $240"]
+        options: ["Short – $213.03", "Medium – $246.62", "Long – $280.20"]
       },
       {
         title: "½ Head Foils",
-        price: "From $160",
+        price: "From $190.64",
         duration: 150,
-        options: ["Short – $160", "Medium – $175", "Long – $190"]
+        options: ["Short – $190.64", "Medium – $224.22", "Long – $257.81"]
       },
       {
         title: "¼ Head Foils",
-        price: "From $130",
+        price: "From $145.85",
         duration: 120,
-        options: ["Short – $130", "Medium – $145", "Long – $160"]
+        options: ["Short – $145.85", "Medium – $162.65", "Long – $179.44"]
       }
     ]
   },
   waxing: {
     title: "Waxing Services",
     services: [
-      { title: "Full Face", price: "$40", duration: 30 },
-      { title: "Eyebrow Wax & Restyling", price: "$25", duration: 20 },
-      { title: "Chin & Upper Lip", price: "$20", duration: 15 },
-      { title: "Legs", price: "$40", duration: 45 },
-      { title: "Hands", price: "$40", duration: 30 },
-      { title: "Underarms", price: "$25", duration: 15 }
+      { title: "Full Face", price: "$45.09", duration: 30 },
+      { title: "Eyebrow Wax & Restyling", price: "$28.30", duration: 20 },
+      { title: "Chin & Upper Lip", price: "$22.70", duration: 15 },
+      { title: "Legs", price: "$45.09", duration: 45 },
+      { title: "Hands", price: "$45.09", duration: 30 },
+      { title: "Underarms", price: "$28.30", duration: 15 }
     ]
   },
   keratin: {
@@ -65,9 +66,9 @@ export const serviceCategories = {
     services: [
       {
         title: "Keratin/Nanoplasty",
-        price: "From $180",
+        price: "From $201.83",
         duration: 180,
-        options: ["Short – $180", "Medium – $300", "Long – $420"]
+        options: ["Short – $201.83", "Medium – $336.18", "Long – $470.53"]
       }
     ]
   },
@@ -76,12 +77,12 @@ export const serviceCategories = {
     services: [
       {
         title: "Hair Up & Makeup Combo",
-        price: "From $160",
+        price: "From $190.64",
         duration: 120,
-        options: ["Short – $160", "Medium – $170", "Long – $180"]
+        options: ["Short – $190.64", "Medium – $201.83", "Long – $213.03"]
       },
-      { title: "Makeup Only", price: "$85", duration: 60 },
-      { title: "Hair Up Only", price: "$85", duration: 60 }
+      { title: "Makeup Only", price: "$101.07", duration: 60 },
+      { title: "Hair Up Only", price: "$101.07", duration: 60 }
     ]
   },
   grooming: {
@@ -89,12 +90,12 @@ export const serviceCategories = {
     services: [
       {
         title: "Men's Cut",
-        price: "From $28",
+        price: "From $33.89",
         duration: 30,
-        options: ["Basic Cut – $28", "Fade – $33", "Wash/Cut – $35"]
+        options: ["Basic Cut – $33.89", "Fade – $39.49", "Wash/Cut – $45.09"]
       },
-      { title: "Beards", price: "$10", duration: 15 },
-      { title: "Boys/Kids Cut", price: "$25", duration: 25 }
+      { title: "Beards", price: "$11.50", duration: 15 },
+      { title: "Boys/Kids Cut", price: "$28.30", duration: 25 }
     ]
   }
 };

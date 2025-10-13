@@ -3,7 +3,7 @@ import axios from 'axios';
 import { GoogleCalendarService } from '../services/google-calendar.js';
 import { createBooking } from '../firebase/bookings.js';
 
-export async function sendBookingEmail(booking, env) {
+export async function sendBookingEmail(booking, env, isAttempt = false) {
   const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
   const BREVO_API_KEY = env.BREVO_API_KEY;
   const BREVO_TEMPLATE_ID = parseInt(env.BREVO_TEMPLATE_ID || '1');
@@ -13,7 +13,6 @@ export async function sendBookingEmail(booking, env) {
   const FROM_NAME = env.BREVO_FROM_NAME || 'Hair by Noora';
   const BCC_EMAIL = env.BREVO_BCC_EMAIL || 'bookings@hairbynoora.com.au';
 
-
   // Add validation
   if (!BREVO_API_KEY) {
     console.error('BREVO_API_KEY environment variable is not set');
@@ -21,14 +20,87 @@ export async function sendBookingEmail(booking, env) {
   }
 
   try {
-    
+    // Always send to customer email and BCC to notification email
+    const recipients = [{ email: booking.email, name: booking.name }]; // Customer email
+    const bccRecipients = [{ email: BCC_EMAIL, name: "Hair by Noora" }]; // Your notification email
+
+    // Create subject based on context
+    let subject;
+    if (isAttempt === true) {
+      subject = `🆕 NEW BOOKING ATTEMPT! - ${booking.name}`;
+    } else if (isAttempt === false) {
+      subject = `✅ CONFIRMED BOOKING! - ${booking.name}`;
+    } else {
+      subject = `Booking Confirmation - Hair by Noora`;
+    }
+
+    // For notification emails (attempt or confirmation), use simple email
+    if (isAttempt !== undefined) {
+      const statusMessage = isAttempt
+        ? "Status: Proceeding to payment..." 
+        : "Status: Payment completed! 💰";
+
+      const statusEmoji = isAttempt ? "🆕" : "✅";
+      const statusText = isAttempt ? "NEW BOOKING ATTEMPT!" : "CONFIRMED BOOKING!";
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h1 style="color: ${isAttempt ? '#ff6b35' : '#28a745'}; text-align: center; font-size: 24px; margin-bottom: 30px;">
+              ${statusEmoji} ${statusText}
+            </h1>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #333; font-size: 18px; margin-bottom: 15px;">👤 Customer Details:</h2>
+              <p><strong>Name:</strong> ${booking.name}</p>
+              <p><strong>💇‍♀️ Service:</strong> ${booking.service}${booking.option ? ` - ${booking.option}` : ''}</p>
+              <p><strong>📅 Date:</strong> ${booking.date}</p>
+              <p><strong>⏰ Time:</strong> ${booking.time}</p>
+              <p><strong>📱 Phone:</strong> ${booking.phone}</p>
+              <p><strong>📧 Email:</strong> ${booking.email}</p>
+              <p><strong>👥 Guests:</strong> ${booking.guests || '1'}</p>
+              <p><strong>⏱️ Duration:</strong> ${booking.durationMinutes || '30'} minutes</p>
+            </div>
+
+            <div style="text-align: center; padding: 15px; background-color: ${isAttempt ? '#fff3cd' : '#d4edda'}; border-radius: 8px; margin-top: 20px;">
+              <p style="margin: 0; font-weight: bold; color: ${isAttempt ? '#856404' : '#155724'};">
+                ${statusMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const payload = {
+        sender: {
+          name: FROM_NAME,
+          email: FROM_EMAIL
+        },
+        to: recipients,
+        bcc: bccRecipients,
+        subject: subject,
+        htmlContent: htmlContent
+      };
+
+      const response = await axios.post(BREVO_API_URL, payload, {
+        headers: {
+          'api-key': BREVO_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+
+      return { success: true, messageId: response.data.messageId };
+    }
+
+    // For customer emails, use the template
     const payload = {
       sender: {
         name: FROM_NAME,
         email: FROM_EMAIL
       },
-      to: [{ email: booking.email, name: booking.name }],
-      bcc: [{ email: BCC_EMAIL }],
+      to: recipients,
+      bcc: bccRecipients,
       templateId: BREVO_TEMPLATE_ID,
       params: {
         name: booking.name,
@@ -51,24 +123,26 @@ export async function sendBookingEmail(booking, env) {
  
     const response = await axios.post(BREVO_API_URL, payload, { 
       headers,
-      timeout: 10000 // 10 second timeout
+      timeout: 10000
     });
     
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('Failed to send email via template:', {
+    console.error('Failed to send email:', {
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
       message: error.message
     });
     
-    // Try fallback simple email if template fails
-    const fallbackResult = await sendSimpleBookingEmail(booking, env);
-    
-    if (fallbackResult.success) {
-      console.log('✅ Fallback email sent successfully');
-      return fallbackResult;
+    // Try fallback simple email if template fails and this is a customer email
+    if (isAttempt === undefined) {
+      const fallbackResult = await sendSimpleBookingEmail(booking, env);
+      
+      if (fallbackResult.success) {
+        console.log('✅ Fallback email sent successfully');
+        return fallbackResult;
+      }
     }
     
     return { success: false, error: error.response?.data || error.message };
@@ -190,15 +264,15 @@ export async function handleStripeWebhook({ request, env }) {
     const metadata = session.metadata || {};
   
     const booking = {
-      name: metadata.customerName || metadata.name || 'Customer',
-      email: metadata.customerEmail || metadata.email || 'No email provided',
+      name: metadata.name || metadata.customerName || 'Customer',
+      email: metadata.email || metadata.customerEmail || 'No email provided',
       phone: metadata.phone || 'No phone provided',
       service: metadata.service || 'Unknown service',
       option: metadata.option || '',
       date: metadata.date,
       time: metadata.time || '12:00',
-      guests: parseInt(session.metadata.guests || '1'),
-      durationMinutes: parseInt(session.metadata.durationMinutes || '30'),
+      guests: parseInt(metadata.guests || '1'),
+      durationMinutes: parseInt(metadata.durationMinutes || '30'),
       paymentIntentId: session.payment_intent,
       createdAt: new Date().toISOString(),
       amount: session.amount_total,
@@ -217,23 +291,14 @@ export async function handleStripeWebhook({ request, env }) {
       booking.id = firestoreResult.id;
     }
 
-    console.log('📧 Attempting to send confirmation email to:', booking.email);
-    console.log('Email payload preview:', {
-      to: booking.email,
-      templateId: env.BREVO_TEMPLATE_ID,
-      hasBrevoKey: !!env.BREVO_API_KEY,
-      service: booking.service,
-      date: booking.date,
-      time: booking.time
-    });
-    
-    const emailResult = await sendBookingEmail(booking, env);
+    // Send email notification that booking has been confirmed/paid
+    console.log('📧 Sending email notification for confirmed booking');
+    const emailResult = await sendBookingEmail(booking, env, false); // false = confirmed booking
     
     if (emailResult.success) {
-      console.log('✅ Email sent successfully:', emailResult.data);
+      console.log('✅ Email notification sent successfully:', emailResult.messageId);
     } else {
-      console.error('❌ Failed to send email:', emailResult.error);
-      console.error('Email error details:', emailResult);
+      console.error('❌ Failed to send email notification:', emailResult.error);
     }
 
     // Add booking to Google Calendar

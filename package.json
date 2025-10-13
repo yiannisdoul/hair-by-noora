@@ -34,7 +34,8 @@
     "react-masonry-css": "^1.0.16",
     "react-router-dom": "^7.6.1",
     "tailwind-merge": "^1.14.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "twilio": "^5.9.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.3",

@@ -10,7 +10,8 @@
   "dependencies": {
     "axios": "^1.6.7",
     "firebase": "^10.8.0",
-    "stripe": "^14.25.0"
+    "stripe": "^14.25.0",
+    "twilio": "^4.22.0"
   },
   "devDependencies": {
     "wrangler": "^3.28.2"

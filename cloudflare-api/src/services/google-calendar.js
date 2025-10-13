@@ -136,9 +136,11 @@ export class GoogleCalendarService {
     }
   }
 
-  async createCalendarEvent(booking) {
+async createCalendarEvent(booking) {
     try {
-     
+      console.log('=== GOOGLE CALENDAR EVENT CREATION START ===');
+      console.log('Raw booking data:', JSON.stringify(booking, null, 2));
+      
       const accessToken = await this.getAccessToken();
       
       if (!accessToken) {
@@ -147,9 +149,8 @@ export class GoogleCalendarService {
 
       console.log('✅ Successfully authenticated with Google Calendar API');
 
-      // Create the event object
-      const eventStartTime = new Date(`${booking.date}T${booking.time}:00`);
-      const eventEndTime = new Date(eventStartTime.getTime() + (booking.durationMinutes * 60 * 1000));
+      // SAFE DATE/TIME CREATION WITH VALIDATION
+      const { eventStartTime, eventEndTime } = this.createSafeDateTimes(booking);
 
       const event = {
         summary: `${booking.service} - ${booking.name}`,
@@ -173,6 +174,8 @@ export class GoogleCalendarService {
         visibility: 'private',
         location: 'Hair by Noora Salon'
       };
+
+      console.log('Calendar event payload:', JSON.stringify(event, null, 2));
 
       // Make the API call to create the event
       const response = await fetch(
@@ -213,6 +216,7 @@ export class GoogleCalendarService {
 
       const eventData = JSON.parse(responseText);
       console.log('✅ Calendar event created successfully:', eventData.id);
+      console.log('=== GOOGLE CALENDAR EVENT CREATION SUCCESS ===');
 
       return {
         success: true,
@@ -222,12 +226,108 @@ export class GoogleCalendarService {
       };
 
     } catch (error) {
+      console.error('=== GOOGLE CALENDAR EVENT CREATION ERROR ===');
       console.error('❌ Google Calendar integration error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        booking: booking
+      });
+      
       return {
         success: false,
         error: error.message,
         details: error
       };
+    }
+  }
+
+  createSafeDateTimes(booking) {
+    try {
+      console.log('Creating safe date/times from booking:', {
+        date: booking.date,
+        time: booking.time,
+        dateType: typeof booking.date,
+        timeType: typeof booking.time
+      });
+
+      // Validate required fields
+      if (!booking.date || booking.date === 'undefined' || booking.date === 'null') {
+        throw new Error(`Invalid or missing date: ${booking.date}`);
+      }
+      
+      if (!booking.time || booking.time === 'undefined' || booking.time === 'null') {
+        throw new Error(`Invalid or missing time: ${booking.time}`);
+      }
+
+      // Format date - handle DD-MM-YYYY format specifically
+      let formattedDate = booking.date.toString().trim();
+      
+      // Convert DD-MM-YYYY or DD/MM/YYYY to YYYY-MM-DD
+      if (formattedDate.includes('-') || formattedDate.includes('/')) {
+        const separator = formattedDate.includes('-') ? '-' : '/';
+        const parts = formattedDate.split(separator);
+        
+        if (parts.length === 3) {
+          // Check if it's DD-MM-YYYY format (day > 12 or year in third position)
+          if (parts[2].length === 4) {
+            // DD-MM-YYYY format
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            formattedDate = `${year}-${month}-${day}`;
+          } else if (parts[0].length === 4) {
+            // Already YYYY-MM-DD format
+            formattedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          }
+        }
+      }
+
+      // Format time - ensure HH:MM format
+      let formattedTime = booking.time.toString().trim();
+      
+      // Convert HHMM to HH:MM if needed
+      if (!formattedTime.includes(':') && formattedTime.length === 4) {
+        formattedTime = `${formattedTime.slice(0, 2)}:${formattedTime.slice(2)}`;
+      }
+
+      // Ensure time is in HH:MM format
+      if (!/^\d{1,2}:\d{2}$/.test(formattedTime)) {
+        throw new Error(`Invalid time format: ${formattedTime}. Expected HH:MM`);
+      }
+
+      console.log('Formatted date/time:', { 
+        original: `${booking.date} ${booking.time}`,
+        formatted: `${formattedDate} ${formattedTime}` 
+      });
+
+      // Create date/time string
+      const dateTimeString = `${formattedDate}T${formattedTime}:00`;
+      console.log('Date/time string:', dateTimeString);
+
+      // Create and validate start time
+      const eventStartTime = new Date(dateTimeString);
+      
+      if (isNaN(eventStartTime.getTime())) {
+        throw new Error(`Failed to create valid date from: ${dateTimeString}`);
+      }
+
+      // Create end time
+      const durationMinutes = booking.durationMinutes || 60; // Default 1 hour
+      const eventEndTime = new Date(eventStartTime.getTime() + (durationMinutes * 60 * 1000));
+
+      console.log('Created valid dates:', {
+        startTime: eventStartTime.toISOString(),
+        endTime: eventEndTime.toISOString(),
+        timezone: this.timezone
+      });
+
+      return { eventStartTime, eventEndTime };
+
+    } catch (error) {
+      console.error('Date creation error:', error);
+      console.error('Booking data that caused error:', booking);
+      throw new Error(`Date/time creation failed: ${error.message}`);
     }
   }
 

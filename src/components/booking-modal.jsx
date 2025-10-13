@@ -24,6 +24,7 @@ export function BookingModal({ isOpen, onClose, service }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function BookingModal({ isOpen, onClose, service }) {
       setName("");
       setEmail("");
       setPhone("");
+      setIsSubmitting(false);
     }
   }, [isOpen, service]);
 
@@ -64,6 +66,7 @@ export function BookingModal({ isOpen, onClose, service }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const bookingData = {
       name,
@@ -79,18 +82,115 @@ export function BookingModal({ isOpen, onClose, service }) {
     };
 
     try {
-      await createCheckoutSession(bookingData);
-      toast({
-        title: "Redirecting to payment...",
-        description: "Please complete your booking by making the deposit payment.",
+      // Send email notification instead of creating Stripe session
+      const response = await fetch(`${import.meta.env.VITE_API_BASE}/notify-booking-attempt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send booking notification: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Show success popup message
+        alert(`✅ Booking Confirmed!\n\nThank you ${name}! Your booking request has been sent.\n\nService: ${service?.title}${selectedOption ? ` - ${selectedOption}` : ''}\nDate: ${format(date, "dd MMM yyyy")}\nTime: ${time}\n\nFor any questions, please call us at 0432 772 818.`);
+        
+        // Show success toast
+        toast({
+          title: "Booking confirmed!",
+          description: "Your booking request has been sent successfully.",
+        });
+
+        // Close the modal
+        onClose();
+      } else {
+        throw new Error(result.message || 'Failed to send booking notification');
+      }
     } catch (error) {
       console.error("Booking error:", error);
+      
+      // Enhanced error handling with specific error messages
+      let errorMessage = "An unexpected error occurred during booking. Please try again.";
+      let alertMessage = errorMessage; // For the alert display
+      
+      // Check for specific error types and customize messages
+      if (error.message) {
+        const errorText = error.message.toLowerCase();
+        
+        if (errorText.includes('duplicate') || errorText.includes('already booked')) {
+          errorMessage = "This appointment time is already booked. Please select a different time.";
+          alertMessage = "❌ Booking Conflict\n\nThis appointment time is already booked. Please select a different time slot.";
+        } else if (errorText.includes('payment') || errorText.includes('stripe')) {
+          errorMessage = "Payment processing failed. Please check your connection and try again.";
+          alertMessage = "💳 Payment Error\n\nPayment processing failed. Please check your connection and try again.";
+        } else if (errorText.includes('network') || errorText.includes('fetch') || errorText.includes('connection')) {
+          errorMessage = "Network error. Please check your internet connection and try again.";
+          alertMessage = "🌐 Connection Error\n\nNetwork error. Please check your internet connection and try again.";
+        } else if (errorText.includes('validation') || errorText.includes('invalid')) {
+          errorMessage = "Please check that all required fields are filled correctly.";
+          alertMessage = "📝 Validation Error\n\nPlease check that all required fields are filled correctly.";
+        } else if (errorText.includes('server') || errorText.includes('500')) {
+          errorMessage = "Server error. Please try again in a few minutes or contact us directly.";
+          alertMessage = "🔧 Server Error\n\nServer error. Please try again in a few minutes or contact us directly.";
+        } else if (errorText.includes('unauthorized') || errorText.includes('403')) {
+          errorMessage = "Authorization error. Please refresh the page and try again.";
+          alertMessage = "🔒 Authorization Error\n\nAuthorization error. Please refresh the page and try again.";
+        } else {
+          // Use the original error message if it's descriptive
+          errorMessage = error.message;
+          alertMessage = `⚠️ Booking Error\n\n${error.message}`;
+        }
+      }
+      
+      // Network-specific error handling
+      if (error.name === 'NetworkError' || error.code === 'NETWORK_ERROR') {
+        errorMessage = "Network connection failed. Please check your internet and try again.";
+        alertMessage = "🌐 Network Error\n\nConnection failed. Please check your internet and try again.";
+      }
+      
+      // HTTP status code handling
+      if (error.status) {
+        switch (error.status) {
+          case 400:
+            errorMessage = "Invalid booking data. Please check your information and try again.";
+            alertMessage = "📝 Invalid Data\n\nPlease check your booking information and try again.";
+            break;
+          case 401:
+            errorMessage = "Session expired. Please refresh the page and try again.";
+            alertMessage = "🔒 Session Expired\n\nPlease refresh the page and try again.";
+            break;
+          case 409:
+            errorMessage = "This appointment time is no longer available. Please select a different time.";
+            alertMessage = "⏰ Time Conflict\n\nThis appointment time is no longer available. Please select a different time.";
+            break;
+          case 429:
+            errorMessage = "Too many requests. Please wait a moment and try again.";
+            alertMessage = "⏳ Rate Limited\n\nToo many requests. Please wait a moment and try again.";
+            break;
+          case 500:
+            errorMessage = "Server error. Please try again later or contact us directly.";
+            alertMessage = "🔧 Server Error\n\nServer error. Please try again later or contact us directly.";
+            break;
+        }
+      }
+      
+      // Display error in alert
+      alert(alertMessage);
+      
+      // Also show toast notification
       toast({
         title: "Booking failed",
-        description: "Please try again later or contact us directly.",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,6 +255,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                 value={guests}
                 onChange={(e) => setGuests(parseInt(e.target.value))}
                 className="text-center border rounded-md p-2 w-36 mx-auto"
+                disabled={isSubmitting}
               >
                 <option value={1}>Myself</option>
                 <option value={2}>2 People</option>
@@ -170,6 +271,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                   selected={date}
                   onSelect={setDate}
                   className="rounded-md border"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -185,6 +287,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                       variant={time === slot ? "default" : "outline"}
                       onClick={() => setTime(slot)}
                       className="text-sm"
+                      disabled={isSubmitting}
                     >
                       {slot}
                     </Button>
@@ -201,6 +304,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="text-center"
+                disabled={isSubmitting}
               />
               <Input
                 type="email"
@@ -209,6 +313,7 @@ export function BookingModal({ isOpen, onClose, service }) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="text-center"
+                disabled={isSubmitting}
               />
               <Input
                 type="tel"
@@ -217,11 +322,19 @@ export function BookingModal({ isOpen, onClose, service }) {
                 onChange={(e) => setPhone(e.target.value)}
                 required
                 className="text-center"
+                disabled={isSubmitting}
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Confirm & Pay Deposit
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Confirming Booking...
+                </>
+              ) : (
+                "Confirm Booking"
+              )}
             </Button>
           </form>
         )}

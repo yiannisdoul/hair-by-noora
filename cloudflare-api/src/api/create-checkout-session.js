@@ -48,7 +48,10 @@ export async function handleCreateCheckoutSession(context) {
 
     console.log('Stripe response:', session);
 
-    return new Response(JSON.stringify({ sessionId: session.id, url: session.url }), {
+    return new Response(JSON.stringify({ 
+      sessionId: session.id, 
+      url: session.url
+    }), {
       headers: { 
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
